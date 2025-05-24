@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Any, Optional, Union, Set
+from typing import Dict, List, Any, Optional, Union
 
 class Agent(ABC):
     """
@@ -8,29 +8,28 @@ class Agent(ABC):
     """
     
     def __init__(self, 
-                 model_name: str, 
-                 api_key: Optional[str] = None,
-                 base_url: Optional[str] = None,
+                 name,
+                 instructions,
                  mcp_servers: Optional[Dict[str, Dict[str, Any]]] = None,
                  **kwargs):
         """
         Initialize the agent.
+        This agent can be configured with multiple MCP servers for flexibility.
+        It supports querying the model, counting tokens, and managing tools.
+        It also provides methods to add, remove, and set active MCP servers.
+        It is designed to be subclassed for specific agent implementations.
         
         Args:
-            model_name: The name of the model to use
-            api_key: API key for the model provider
-            base_url: Base URL for API requests (optional)
+            name: The name of the agent
             mcp_servers: Dictionary of MCP server configurations {server_name: config_dict}
             **kwargs: Additional model-specific configuration parameters
         """
-        self.model_name = model_name
-        self.api_key = api_key
-        self.base_url = base_url
-        self.config = kwargs
-        
+        self.name = name
+        self.instructions = instructions
         # Initialize MCP server configurations
         self.mcp_servers = mcp_servers or {}
         self.active_mcp_server = next(iter(self.mcp_servers)) if self.mcp_servers else None
+        self.config = kwargs
     
     @abstractmethod
     def query(self, 
@@ -179,7 +178,7 @@ class Agent(ABC):
         # Implementation to be provided by subclasses
         raise NotImplementedError("Getting available tools must be implemented by subclasses")
     
-    def get_model_info(self) -> Dict[str, Any]:
+    def get_agent_info(self) -> Dict[str, Any]:
         """
         Get information about the current model.
         
@@ -187,11 +186,11 @@ class Agent(ABC):
             Dictionary with model information
         """
         return {
-            "name": self.model_name,
+            "name": self.name,
             "provider": self.__class__.__name__.replace("Agent", ""),
             "active_mcp_server": self.active_mcp_server,
             "mcp_servers": list(self.mcp_servers.keys())
         }
     
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(model={self.model_name}, mcp_servers={list(self.mcp_servers.keys())})"
+        return f"{self.__class__.__name__}(model={self.name}, mcp_servers={list(self.mcp_servers.keys())})"
